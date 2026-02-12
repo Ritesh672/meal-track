@@ -13,6 +13,7 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      setLoading(true);
       if (user) {
         try {
           const token = localStorage.getItem('token');

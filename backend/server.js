@@ -22,6 +22,18 @@ app.get('/', (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+const startServer = async () => {
+  try {
+    const db = require('./db');
+    await db.query('SELECT 1');
+    console.log('✅ Database connected successfully');
+  } catch (err) {
+    console.error('❌ Database connection failed (Proceeding anyway):', err.message);
+  }
+
+  app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-});
+  });
+};
+
+startServer();

@@ -14,10 +14,10 @@ const MealCard = ({ meal }) => {
         </div>
         
         <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm text-gray-500">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> {meal.calories} kcal</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> {meal.protein}g P</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> {meal.carbs}g C</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> {meal.fat}g F</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> {meal.calories || 0} kcal</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> {meal.protein || 0}g P</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> {meal.carbs || 0}g C</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> {meal.fat || 0}g F</span>
         </div>
       </div>
       

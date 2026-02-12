@@ -2,11 +2,14 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const RadialProgress = ({ value, maxValue, label, color, unit }) => {
-  const percentage = Math.min(100, Math.max(0, (value / maxValue) * 100));
-  const remaining = Math.max(0, maxValue - value);
+  const safeValue = Number(value) || 0;
+  const safeMaxValue = Number(maxValue) || 1; // Avoid division by zero
+  
+  const percentage = Math.min(100, Math.max(0, (safeValue / safeMaxValue) * 100));
+  const remaining = Math.max(0, safeMaxValue - safeValue);
   
   const data = [
-    { name: 'Consumed', value: value },
+    { name: 'Consumed', value: safeValue },
     { name: 'Remaining', value: remaining },
   ];
 
@@ -33,13 +36,13 @@ const RadialProgress = ({ value, maxValue, label, color, unit }) => {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl font-bold text-gray-900">{Math.round(value)}</span>
+          <span className="text-xl font-bold text-gray-900">{Math.round(safeValue)}</span>
           <span className="text-xs text-gray-500">{unit}</span>
         </div>
       </div>
       <div className="mt-2 text-center">
         <h3 className="text-sm font-medium text-gray-700">{label}</h3>
-        <p className="text-xs text-xs text-gray-500">{Math.round(maxValue)} target</p>
+        <p className="text-xs text-xs text-gray-500">{Math.round(safeMaxValue)} target</p>
       </div>
     </div>
   );

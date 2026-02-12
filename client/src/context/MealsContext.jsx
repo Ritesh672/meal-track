@@ -55,10 +55,10 @@ export const MealsProvider = ({ children }) => {
   useEffect(() => {
     // Calculate totals from current state
     const newTotals = meals.reduce((acc, meal) => ({
-        calories: acc.calories + Number(meal.calories),
-        protein: acc.protein + Number(meal.protein),
-        carbs: acc.carbs + Number(meal.carbs),
-        fat: acc.fat + Number(meal.fat),
+        calories: acc.calories + (Number(meal.calories) || 0),
+        protein: acc.protein + (Number(meal.protein) || 0),
+        carbs: acc.carbs + (Number(meal.carbs) || 0),
+        fat: acc.fat + (Number(meal.fat) || 0),
     }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
     
     setTotals(newTotals);

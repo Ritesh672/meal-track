@@ -1,0 +1,2 @@
+Error: getaddrinfo ENOTFOUND db.mbltbqpqudtwocjtyblo.supabase.co
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26)

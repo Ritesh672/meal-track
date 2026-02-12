@@ -5,8 +5,13 @@ const client = new Client({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME, // ADD THIS
   port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
+
 
 async function test() {
   try {

@@ -1,39 +1,29 @@
 const { Client } = require('pg');
+require('dotenv').config();
 
-const creds = [
-  { user: 'postgres', password: 'Ritesh222' },
-  { user: 'postgres', password: 'password' },
-  { user: 'postgres', password: 'admin' },
-  { user: 'postgres', password: '' },
-  { user: 'ritesh', password: 'Ritesh222' },
-  { user: 'root', password: 'Ritesh222' },
-];
-
-async function tryConnect(cred) {
+async function testConnection() {
   const client = new Client({
-    user: cred.user,
-    host: 'localhost',
-    password: cred.password,
-    port: 5432,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    ssl: {
+      rejectUnauthorized: false,
+    },
   });
 
   try {
     await client.connect();
-    console.log(`SUCCESS: Connected with user '${cred.user}' and password '${cred.password}'`);
+    console.log('✅ Connected to Supabase Postgres');
+
+    const res = await client.query('SELECT NOW()');
+    console.log('Server time:', res.rows[0]);
+
     await client.end();
-    return true;
   } catch (err) {
-    console.log(`FAILED: User '${cred.user}' with password '${cred.password}' - ${err.message}`);
-    return false;
+    console.error('❌ Connection failed:', err.message);
   }
 }
 
-async function run() {
-  for (const cred of creds) {
-    if (await tryConnect(cred)) {
-      break;
-    }
-  }
-}
-
-run();
+testConnection();

@@ -6,13 +6,17 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const dbConfig = {
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 };
 
-const dbName = process.env.PG_DATABASE;
+const dbName = process.env.DB_DATABASE;
 
 async function setupDatabase() {
   const client = new Client(dbConfig); // Connect to default 'postgres' database first
@@ -38,7 +42,7 @@ async function setupDatabase() {
     await client.end();
   }
 
-  // Now connect to the specific database to run schema
+  // connect to the specific database to run schema
   const dbClient = new Client({
     ...dbConfig,
     database: dbName,
