@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-// const pool = require('./db'); // Will be used later
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import db from './db/index.js';
 
 dotenv.config();
 
@@ -13,9 +13,13 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/user', require('./routes/user.routes'));
-app.use('/api/meals', require('./routes/meal.routes'));
+import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
+import mealRoutes from './routes/meal.routes.js';
+
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/meals', mealRoutes);
 
 app.get('/', (req, res) => {
   res.send('Meals Tracker API is running');
@@ -24,7 +28,6 @@ app.get('/', (req, res) => {
 // Start Server
 const startServer = async () => {
   try {
-    const db = require('./db');
     await db.query('SELECT 1');
     console.log('✅ Database connected successfully');
   } catch (err) {

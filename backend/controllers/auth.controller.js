@@ -1,8 +1,8 @@
-const db = require('../db');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import db from '../db/index.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -38,7 +38,7 @@ const register = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -73,7 +73,7 @@ const login = async (req, res) => {
   }
 };
 
-const getMe = async (req, res) => {
+export const getMe = async (req, res) => {
   try {
     // req.user is set by auth middleware
     const user = await db.query('SELECT id, email, created_at FROM users WHERE id = $1', [req.user.id]);
@@ -89,10 +89,4 @@ const getMe = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
-};
-
-module.exports = {
-  register,
-  login,
-  getMe,
 };

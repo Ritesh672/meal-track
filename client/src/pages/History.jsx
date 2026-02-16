@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Calendar } from 'lucide-react';
 
-import { API_URL } from '../config/api';
+import axiosInstance from '../config/axiosInstance';
 
 const History = () => {
     const [historyGroups, setHistoryGroups] = useState([]);
@@ -10,58 +10,49 @@ const History = () => {
 
     useEffect(() => {
         const fetchHistory = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-
             try {
                 // Fetch all meals
-                const res = await fetch(`${API_URL}/meals?all=true`, { // param checked in backend? no, just omission of date works now
-                     headers: {
-                        'x-auth-token': token
-                    }
-                });
+                const res = await axiosInstance.get('/meals?all=true');
                 
-                if (res.ok) {
-                    const meals = await res.json();
+                const meals = res.data;
+                
+                // Group by date
+                const groupsObj = meals.reduce((acc, meal) => {
+                    // date comes as full ISO string from PG maybe? or just YYYY-MM-DD
+                    // pg 'date' type returns string YYYY-MM-DD mostly or timestamp
+                    const dateKey = meal.meal_date.split('T')[0];
                     
-                    // Group by date
-                    const groupsObj = meals.reduce((acc, meal) => {
-                        // date comes as full ISO string from PG maybe? or just YYYY-MM-DD
-                        // pg 'date' type returns string YYYY-MM-DD mostly or timestamp
-                        const dateKey = meal.meal_date.split('T')[0];
-                        
-                        if (!acc[dateKey]) {
-                            acc[dateKey] = {
-                                date: dateKey,
-                                meals: [],
-                                totals: { calories: 0, protein: 0, carbs: 0, fat: 0 }
-                            };
-                        }
-                        
-                        /* map backend fields to frontend */
-                        const frontendMeal = {
-                             id: meal.id,
-                             name: meal.meal_name,
-                             type: meal.meal_type,
-                             calories: Number(meal.calories), // ensure number
-                             protein: Number(meal.protein_g),
-                             carbs: Number(meal.carbs_g),
-                             fat: Number(meal.fats_g)
+                    if (!acc[dateKey]) {
+                        acc[dateKey] = {
+                            date: dateKey,
+                            meals: [],
+                            totals: { calories: 0, protein: 0, carbs: 0, fat: 0 }
                         };
+                    }
+                    
+                    /* map backend fields to frontend */
+                    const frontendMeal = {
+                            id: meal.id,
+                            name: meal.meal_name,
+                            type: meal.meal_type,
+                            calories: Number(meal.calories), // ensure number
+                            protein: Number(meal.protein_g),
+                            carbs: Number(meal.carbs_g),
+                            fat: Number(meal.fats_g)
+                    };
 
-                        acc[dateKey].meals.push(frontendMeal);
-                        acc[dateKey].totals.calories += frontendMeal.calories;
-                        acc[dateKey].totals.protein += frontendMeal.protein;
-                        acc[dateKey].totals.carbs += frontendMeal.carbs;
-                        acc[dateKey].totals.fat += frontendMeal.fat;
-                        
-                        return acc;
-                    }, {});
+                    acc[dateKey].meals.push(frontendMeal);
+                    acc[dateKey].totals.calories += frontendMeal.calories;
+                    acc[dateKey].totals.protein += frontendMeal.protein;
+                    acc[dateKey].totals.carbs += frontendMeal.carbs;
+                    acc[dateKey].totals.fat += frontendMeal.fat;
+                    
+                    return acc;
+                }, {});
 
-                    // Convert to array and sort
-                    const groups = Object.values(groupsObj).sort((a, b) => new Date(b.date) - new Date(a.date));
-                    setHistoryGroups(groups);
-                }
+                // Convert to array and sort
+                const groups = Object.values(groupsObj).sort((a, b) => new Date(b.date) - new Date(a.date));
+                setHistoryGroups(groups);
             } catch (err) {
                 console.error("Failed to fetch history", err);
             } finally {

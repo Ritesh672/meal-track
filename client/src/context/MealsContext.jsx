@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { API_URL } from '../config/api';
+import axiosInstance from '../config/axiosInstance';
 import { useAuth } from './AuthContext';
 
 const MealsContext = createContext();
@@ -15,33 +15,23 @@ export const MealsProvider = ({ children }) => {
     const fetchMeals = async () => {
       if (user) {
         try {
-          const token = localStorage.getItem('token');
           const today = new Date().toISOString().split('T')[0];
-          const res = await fetch(`${API_URL}/meals?date=${today}`, {
-             headers: {
-              'x-auth-token': token
-            }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            // Backend returns flat structure with joined nutrition
-            // Frontend expects specific structure, let's map it if needed or adapt frontend
-            // Current backend: { id, meal_name, calories, protein_g ... }
-            // Current frontend expects: { id, name, calories, protein, carbs, fat ... }
+          const res = await axiosInstance.get(`/meals?date=${today}`);
+          
+          const data = res.data;
             
-            const mappedMeals = data.map(m => ({
-                id: m.id,
-                name: m.meal_name,
-                type: m.meal_type,
-                time: m.meal_time,
-                calories: m.calories,
-                protein: m.protein_g,
-                carbs: m.carbs_g,
-                fat: m.fats_g,
-                image: m.image_url
-            }));
-            setMeals(mappedMeals);
-          }
+          const mappedMeals = data.map(m => ({
+              id: m.id,
+              name: m.meal_name,
+              type: m.meal_type,
+              time: m.meal_time,
+              calories: m.calories,
+              protein: m.protein_g,
+              carbs: m.carbs_g,
+              fat: m.fats_g,
+              image: m.image_url
+          }));
+          setMeals(mappedMeals);
         } catch (err) {
           console.error('Error fetching meals', err);
         }
@@ -71,34 +61,25 @@ export const MealsProvider = ({ children }) => {
     setMeals(prev => [...prev, newMealFrontend]);
 
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/meals`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-auth-token': token
-            },
-            body: JSON.stringify({
-                meal_type: meal.type,
-                meal_name: meal.name,
-                description: '',
-                input_type: 'text',
-                image_url: meal.image,
-                calories: meal.calories,
-                protein_g: meal.protein,
-                carbs_g: meal.carbs,
-                fats_g: meal.fat
-            })
+        const res = await axiosInstance.post('/meals', {
+            meal_type: meal.type,
+            meal_name: meal.name,
+            description: '',
+            input_type: 'text',
+            image_url: meal.image,
+            calories: meal.calories,
+            protein_g: meal.protein,
+            carbs_g: meal.carbs,
+            fats_g: meal.fat
         });
 
-        if (res.ok) {
-            const savedMeal = await res.json();
-            // Replace temp ID with real ID
-            setMeals(prev => prev.map(m => m.id === tempId ? {
-                ...m,
-                id: savedMeal.id
-            } : m));
-        }
+        const savedMeal = res.data;
+        // Replace temp ID with real ID
+        setMeals(prev => prev.map(m => m.id === tempId ? {
+            ...m,
+            id: savedMeal.id
+        } : m));
+
     } catch (err) {
         console.error('Error adding meal', err);
         // Rollback?
@@ -109,13 +90,7 @@ export const MealsProvider = ({ children }) => {
   const deleteMeal = async (id) => {
     setMeals(prev => prev.filter(meal => meal.id !== id));
     try {
-        const token = localStorage.getItem('token');
-        await fetch(`${API_URL}/meals/${id}`, {
-            method: 'DELETE',
-            headers: { 
-                'x-auth-token': token
-            }
-        });
+        await axiosInstance.delete(`/meals/${id}`);
     } catch (err) {
         console.error('Error deleting meal', err);
     }

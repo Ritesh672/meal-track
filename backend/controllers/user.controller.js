@@ -1,7 +1,7 @@
-const db = require('../db');
+import db from '../db/index.js';
 
 // Get user profile
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const profile = await db.query('SELECT * FROM user_profiles WHERE user_id = $1', [req.user.id]);
     const goals = await db.query('SELECT * FROM fitness_goals WHERE user_id = $1 AND is_active = true', [req.user.id]);
@@ -17,7 +17,7 @@ const getProfile = async (req, res) => {
 };
 
 // Create or Update Profile
-const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const { full_name, age, gender, height_cm, current_weight_kg, fitness_level } = req.body;
 
@@ -51,7 +51,7 @@ const updateProfile = async (req, res) => {
 };
 
 // Set Fitness Goals
-const setGoals = async (req, res) => {
+export const setGoals = async (req, res) => {
   try {
     const { goal_type, target_physique, target_weight_kg, activity_level } = req.body;
 
@@ -69,10 +69,4 @@ const setGoals = async (req, res) => {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
-};
-
-module.exports = {
-  getProfile,
-  updateProfile,
-  setGoals,
 };

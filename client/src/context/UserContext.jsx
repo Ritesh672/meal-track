@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { API_URL } from '../config/api';
+import axiosInstance from '../config/axiosInstance';
 import { useAuth } from './AuthContext';
 
 const UserContext = createContext();
@@ -16,34 +16,27 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
       if (user) {
         try {
-          const token = localStorage.getItem('token');
-          const res = await fetch(`${API_URL}/user/profile`, {
-            headers: {
-              'x-auth-token': token
-            }
+          const res = await axiosInstance.get('/user/profile');
+          const data = res.data;
+          // Map backend data to frontend structure
+          setUserData({
+            name: data.profile?.full_name || user.email,
+            age: data.profile?.age,
+            gender: data.profile?.gender,
+            weight: data.profile?.current_weight_kg,
+            height: data.profile?.height_cm,
+            activityLevel: data.goals?.activity_level,
+            goal: data.goals?.goal_type,
+            onboarded: !!data.profile?.age, // Simple check if onboarding is done
+            calorieTarget: calculateDailyCalories({
+                weight: data.profile?.current_weight_kg,
+                height: data.profile?.height_cm,
+                age: data.profile?.age,
+                gender: data.profile?.gender,
+                activityLevel: data.goals?.activity_level,
+                goal: data.goals?.goal_type
+            })
           });
-          if (res.ok) {
-            const data = await res.json();
-            // Map backend data to frontend structure
-            setUserData({
-              name: data.profile?.full_name || user.email,
-              age: data.profile?.age,
-              gender: data.profile?.gender,
-              weight: data.profile?.current_weight_kg,
-              height: data.profile?.height_cm,
-              activityLevel: data.goals?.activity_level,
-              goal: data.goals?.goal_type,
-              onboarded: !!data.profile?.age, // Simple check if onboarding is done
-              calorieTarget: calculateDailyCalories({
-                  weight: data.profile?.current_weight_kg,
-                  height: data.profile?.height_cm,
-                  age: data.profile?.age,
-                  gender: data.profile?.gender,
-                  activityLevel: data.goals?.activity_level,
-                  goal: data.goals?.goal_type
-              })
-            });
-          }
         } catch (err) {
           console.error('Error fetching user data', err);
         }
@@ -65,41 +58,25 @@ export const UserProvider = ({ children }) => {
     }));
 
     try {
-        const token = localStorage.getItem('token');
-        
         // Update Profile
         if (data.name || data.fullName || data.age || data.gender || data.weight || data.height) {
-            await fetch(`${API_URL}/user/profile`, {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'x-auth-token': token
-                },
-                body: JSON.stringify({ 
-                    full_name: data.fullName || data.name, // Handle both potential sources
-                    age: data.age,
-                    gender: data.gender,
-                    current_weight_kg: data.weight,
-                    height_cm: data.height,
-                    fitness_level: 'intermediate' // default for now
-                })
+            await axiosInstance.post('/user/profile', { 
+                full_name: data.fullName || data.name, // Handle both potential sources
+                age: data.age,
+                gender: data.gender,
+                current_weight_kg: data.weight,
+                height_cm: data.height,
+                fitness_level: 'intermediate' // default for now
             });
         }
 
         // Update Goals if present
         if (data.goal || data.activityLevel) {
-             await fetch(`${API_URL}/user/goals`, {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'x-auth-token': token
-                },
-                body: JSON.stringify({ 
-                    goal_type: data.goal,
-                    target_physique: 'athletic', // default
-                    target_weight_kg: data.weight, // placeholder
-                    activity_level: data.activityLevel
-                })
+             await axiosInstance.post('/user/goals', { 
+                goal_type: data.goal,
+                target_physique: 'athletic', // default
+                target_weight_kg: data.weight, // placeholder
+                activity_level: data.activityLevel
             });
         }
 

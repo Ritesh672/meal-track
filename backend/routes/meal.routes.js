@@ -1,21 +1,28 @@
-const express = require('express');
+import express from 'express';
+import { getMeals, addMeal, deleteMeal } from '../controllers/meal.controller.js';
+import  analyzeMeal  from '../controllers/gemini.controller.js';
+import authMiddleware from '../middleware/auth.middleware.js';
+
 const router = express.Router();
-const mealController = require('../controllers/meal.controller');
-const authMiddleware = require('../middleware/auth.middleware');
 
 // @route   GET api/meals
 // @desc    Get meals for a specific date
 // @access  Private
-router.get('/', authMiddleware, mealController.getMeals);
+router.get('/', authMiddleware, getMeals);
+
+// @route   POST api/meals/analyze
+// @desc    Analyze a meal description using AI
+// @access  Private
+router.post('/analyze', authMiddleware, analyzeMeal);
 
 // @route   POST api/meals
 // @desc    Add a new meal
 // @access  Private
-router.post('/', authMiddleware, mealController.addMeal);
+router.post('/', authMiddleware, addMeal);
 
 // @route   DELETE api/meals/:id
 // @desc    Delete a meal
 // @access  Private
-router.delete('/:id', authMiddleware, mealController.deleteMeal);
+router.delete('/:id', authMiddleware, deleteMeal);
 
-module.exports = router;
+export default router;

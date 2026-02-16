@@ -1,7 +1,7 @@
-const db = require('../db');
+import db from '../db/index.js';
 
 // Get Today's Meals
-const getMeals = async (req, res) => {
+export const getMeals = async (req, res) => {
   try {
     const { date } = req.query; // YYYY-MM-DD
     
@@ -29,7 +29,7 @@ const getMeals = async (req, res) => {
 };
 
 // Add Meal
-const addMeal = async (req, res) => {
+export const addMeal = async (req, res) => {
   try {
     const { 
         meal_type, meal_name, description, input_type, image_url,
@@ -60,7 +60,7 @@ const addMeal = async (req, res) => {
 };
 
 // Delete Meal
-const deleteMeal = async (req, res) => {
+export const deleteMeal = async (req, res) => {
   try {
       const { id } = req.params;
       await db.query('DELETE FROM meals WHERE id = $1 AND user_id = $2', [id, req.user.id]);
@@ -69,10 +69,4 @@ const deleteMeal = async (req, res) => {
       console.error(err.message);
       res.status(500).send('Server Error');
   }
-};
-
-module.exports = {
-  getMeals,
-  addMeal,
-  deleteMeal,
 };
