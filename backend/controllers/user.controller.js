@@ -1,14 +1,17 @@
 import db from '../db/index.js';
+import { calculateNutritionTargets } from '../services/gemini.service.js';
 
 // Get user profile
 export const getProfile = async (req, res) => {
   try {
     const profile = await db.query('SELECT * FROM user_profiles WHERE user_id = $1', [req.user.id]);
     const goals = await db.query('SELECT * FROM fitness_goals WHERE user_id = $1 AND is_active = true', [req.user.id]);
+    const nutrition = await db.query('SELECT * FROM nutrition_targets WHERE user_id = $1 AND is_active = true', [req.user.id]);
 
     res.json({
       profile: profile.rows[0] || null,
       goals: goals.rows[0] || null,
+      nutrition: nutrition.rows[0] || null,
     });
   } catch (err) {
     console.error(err.message);
@@ -59,12 +62,50 @@ export const setGoals = async (req, res) => {
     await db.query('UPDATE fitness_goals SET is_active = false WHERE user_id = $1', [req.user.id]);
 
     // Create new goal
-    const newGoal = await db.query(
+    const newGoalResult = await db.query(
       'INSERT INTO fitness_goals (user_id, goal_type, target_physique, target_weight_kg, activity_level, is_active) VALUES ($1, $2, $3, $4, $5, true) RETURNING *',
       [req.user.id, goal_type, target_physique, target_weight_kg, activity_level]
     );
+    const newGoal = newGoalResult.rows[0];
 
-    res.json(newGoal.rows[0]);
+    // --- AI Nutrition Calculation ---
+    // 1. Get User Profile
+    const profileResult = await db.query('SELECT * FROM user_profiles WHERE user_id = $1', [req.user.id]);
+    const profile = profileResult.rows[0];
+
+    if (profile) {
+        try {
+            // 2. Calculate Targets via Gemini
+            const targets = await calculateNutritionTargets(profile, newGoal);
+
+            // 3. Deactivate old targets
+            await db.query('UPDATE nutrition_targets SET is_active = false WHERE user_id = $1', [req.user.id]);
+
+            // 4. Save new targets
+            await db.query(
+                `INSERT INTO nutrition_targets 
+                (user_id, goal_id, daily_calories, daily_protein_g, daily_carbs_g, daily_fats_g, daily_fiber_g, daily_water_ml, notes) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [
+                    req.user.id, 
+                    newGoal.id, 
+                    targets.daily_calories, 
+                    targets.daily_protein_g, 
+                    targets.daily_carbs_g, 
+                    targets.daily_fats_g, 
+                    targets.daily_fiber_g || 30, // Default if AI misses it
+                    targets.daily_water_ml || 2500, 
+                    targets.notes
+                ]
+            );
+            console.log("AI Nutrition Targets Saved for User:", req.user.id);
+        } catch (aiError) {
+            console.error("Failed to generate AI nutrition targets:", aiError);
+            // Non-blocking: we still return the goal, just maybe with a warning or silently fail the AI part
+        }
+    }
+
+    res.json(newGoal);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

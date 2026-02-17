@@ -78,6 +78,10 @@ export const getMe = async (req, res) => {
     // req.user is set by auth middleware
     const user = await db.query('SELECT id, email, created_at FROM users WHERE id = $1', [req.user.id]);
     
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
     // Fetch profile if exists
     const profile = await db.query('SELECT * FROM user_profiles WHERE user_id = $1', [req.user.id]);
 

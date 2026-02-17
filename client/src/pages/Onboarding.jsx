@@ -114,13 +114,17 @@ const Onboarding = () => {
                                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-gray-900"
                             >
                                 <option value="sedentary">Sedentary (Little/no exercise)</option>
-                                <option value="moderate">Moderate (Exercise 3-5 days)</option>
-                                <option value="active">Active (Daily exercise)</option>
+                                <option value="lightly_active">Lightly Active </option>
+                                <option value="moderate">Moderate </option>
+                                <option value="active">Active </option>
+                                <option value="very_active">Very Active </option>
+                                <option value="extremely_active">Extremely Active </option>
                             </select>
                         </div>
                     </div>
                 </div>
             )}
+            
 
             {/* Step 3: Goals */}
             {step === 3 && (

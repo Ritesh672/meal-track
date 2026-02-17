@@ -27,15 +27,13 @@ export const UserProvider = ({ children }) => {
             height: data.profile?.height_cm,
             activityLevel: data.goals?.activity_level,
             goal: data.goals?.goal_type,
-            onboarded: !!data.profile?.age, // Simple check if onboarding is done
-            calorieTarget: calculateDailyCalories({
-                weight: data.profile?.current_weight_kg,
-                height: data.profile?.height_cm,
-                age: data.profile?.age,
-                gender: data.profile?.gender,
-                activityLevel: data.goals?.activity_level,
-                goal: data.goals?.goal_type
-            })
+            onboarded: !!data.profile?.age, 
+            // Use AI targets from backend
+            calorieTarget: data.nutrition?.daily_calories || 2000,
+            proteinTarget: data.nutrition?.daily_protein_g,
+            carbsTarget: data.nutrition?.daily_carbs_g,
+            fatTarget: data.nutrition?.daily_fats_g,
+            // Fallback to manual if needed (logic removed as requested)
           });
         } catch (err) {
           console.error('Error fetching user data', err);
@@ -58,65 +56,48 @@ export const UserProvider = ({ children }) => {
     }));
 
     try {
+        console.log("Updating user data:", data); // Debug log
+
         // Update Profile
-        if (data.name || data.fullName || data.age || data.gender || data.weight || data.height) {
+        if (data.fullName || data.age || data.gender || data.weight || data.height) {
+            console.log("Sending profile update...");
             await axiosInstance.post('/user/profile', { 
-                full_name: data.fullName || data.name, // Handle both potential sources
+                full_name: data.fullName || data.name, 
                 age: data.age,
                 gender: data.gender,
                 current_weight_kg: data.weight,
                 height_cm: data.height,
-                fitness_level: 'intermediate' // default for now
+                // Map activity level to fitness level (approximate) or default to intermediate
+                fitness_level: ['sedentary', 'lightly_active'].includes(data.activityLevel) ? 'beginner' : 
+                               ['very_active', 'extremely_active'].includes(data.activityLevel) ? 'advanced' : 'intermediate'
             });
+            console.log("Profile updated successfully");
         }
 
         // Update Goals if present
+        // Note: The backend expects 'goal_type', 'target_weight_kg', 'activity_level', 'target_physique'
         if (data.goal || data.activityLevel) {
+             console.log("Sending goals update...");
              await axiosInstance.post('/user/goals', { 
-                goal_type: data.goal,
-                target_physique: 'athletic', // default
-                target_weight_kg: data.weight, // placeholder
+                goal_type: data.goal === 'lose' ? 'weight_loss' : data.goal === 'gain' ? 'muscle_gain' : 'maintenance', // Map frontend values to backend ENUM
+                target_physique: 'athletic', // Default or add to frontend
+                target_weight_kg: data.weight, // Default to current weight if not specified
                 activity_level: data.activityLevel
             });
+            console.log("Goals updated successfully (and triggered AI calculation)");
         }
 
     } catch (err) {
-        console.error('Error updating profile', err);
-        // revert?
+        console.error('Error updating profile/goals:', err);
+        console.error('Response data:', err.response?.data);
+        alert("Failed to save profile: " + (err.response?.data?.message || err.message));
     }
   };
 
-  const calculateDailyCalories = (data) => {
-      if (!data.weight || !data.height || !data.age || !data.gender || !data.activityLevel || !data.goal) return 2000;
 
-      // Harris-Benedict Equation
-      let bmr;
-      if (data.gender === 'male') {
-          bmr = 88.362 + (13.397 * data.weight) + (4.799 * data.height) - (5.677 * data.age);
-      } else {
-          bmr = 447.593 + (9.247 * data.weight) + (3.098 * data.height) - (4.330 * data.age);
-      }
 
-      let activityMultiplier;
-      switch (data.activityLevel) {
-          case 'sedentary': activityMultiplier = 1.2; break;
-          case 'moderate': activityMultiplier = 1.55; break;
-          case 'active': activityMultiplier = 1.725; break;
-          default: activityMultiplier = 1.2;
-      }
-
-      let maintenanceCalories = bmr * activityMultiplier;
-      
-      let targetCalories = maintenanceCalories;
-      if (data.goal === 'lose') targetCalories -= 500; // 'weight_loss' map check needed
-      else if (data.goal === 'gain') targetCalories += 500; // 'muscle_gain' map check
-
-      return Math.round(targetCalories);
-  };
-
-  const completeOnboarding = (data) => {
-      // Logic handled in updateUser now which saves to DB
-      updateUser({ ...data, onboarded: true });
+  const completeOnboarding = async (data) => {
+      await updateUser(data);
   };
 
   return (
