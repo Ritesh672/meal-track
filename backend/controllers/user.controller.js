@@ -46,6 +46,43 @@ export const updateProfile = async (req, res) => {
       );
     }
 
+    // --- AI Nutrition Recalculation (if profile changed) ---
+    // 1. Get Active Goal
+    const goalsResult = await db.query('SELECT * FROM fitness_goals WHERE user_id = $1 AND is_active = true', [req.user.id]);
+    const activeGoal = goalsResult.rows[0];
+
+    if (activeGoal && profile.rows[0]) {
+        try {
+            console.log("Recalculating nutrition targets due to profile update...");
+            // 2. Calculate Targets via Gemini
+            const targets = await calculateNutritionTargets(profile.rows[0], activeGoal);
+
+            // 3. Deactivate old targets
+            await db.query('UPDATE nutrition_targets SET is_active = false WHERE user_id = $1', [req.user.id]);
+
+            // 4. Save new targets
+            await db.query(
+                `INSERT INTO nutrition_targets 
+                (user_id, goal_id, daily_calories, daily_protein_g, daily_carbs_g, daily_fats_g, daily_fiber_g, daily_water_ml, notes) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [
+                    req.user.id, 
+                    activeGoal.id, 
+                    targets.daily_calories, 
+                    targets.daily_protein_g, 
+                    targets.daily_carbs_g, 
+                    targets.daily_fats_g, 
+                    targets.daily_fiber_g || 30, 
+                    targets.daily_water_ml || 2500, 
+                    targets.notes
+                ]
+            );
+            console.log("AI Nutrition Targets Updated for User:", req.user.id);
+        } catch (aiError) {
+             console.error("Failed to update AI nutrition targets:", aiError);
+        }
+    }
+
     res.json(profile.rows[0]);
   } catch (err) {
     console.error(err.message);

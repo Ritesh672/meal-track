@@ -106,8 +106,10 @@ const Profile = () => {
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 focus:border-blue-500 focus:outline-none capitalize"
                                 >
                                     <option value="sedentary">Sedentary</option>
-                                    <option value="moderate">Moderate</option>
-                                    <option value="active">Active</option>
+                                    <option value="lightly_active">Lightly Active</option>
+                                    <option value="moderately_active">Moderately Active</option>
+                                    <option value="very_active">Very Active</option>
+                                    <option value="extremely_active">Extremely Active</option>
                                 </select>
                             ) : (
                                 <p className="text-xl font-semibold capitalize text-gray-900">{userData?.activityLevel}</p>

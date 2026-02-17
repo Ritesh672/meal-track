@@ -11,39 +11,38 @@ export const UserProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      if (user) {
-        try {
-          const res = await axiosInstance.get('/user/profile');
-          const data = res.data;
-          // Map backend data to frontend structure
-          setUserData({
-            name: data.profile?.full_name || user.email,
-            age: data.profile?.age,
-            gender: data.profile?.gender,
-            weight: data.profile?.current_weight_kg,
-            height: data.profile?.height_cm,
-            activityLevel: data.goals?.activity_level,
-            goal: data.goals?.goal_type,
-            onboarded: !!data.profile?.age, 
-            // Use AI targets from backend
-            calorieTarget: data.nutrition?.daily_calories || 2000,
-            proteinTarget: data.nutrition?.daily_protein_g,
-            carbsTarget: data.nutrition?.daily_carbs_g,
-            fatTarget: data.nutrition?.daily_fats_g,
-            // Fallback to manual if needed (logic removed as requested)
-          });
-        } catch (err) {
-          console.error('Error fetching user data', err);
-        }
-      } else {
-        setUserData(null);
+  const fetchUserData = async () => {
+    setLoading(true);
+    if (user) {
+      try {
+        const res = await axiosInstance.get('/user/profile');
+        const data = res.data;
+        // Map backend data to frontend structure
+        setUserData({
+          name: data.profile?.full_name || user.email,
+          age: data.profile?.age,
+          gender: data.profile?.gender,
+          weight: data.profile?.current_weight_kg,
+          height: data.profile?.height_cm,
+          activityLevel: data.goals?.activity_level,
+          goal: data.goals?.goal_type,
+          onboarded: !!data.profile?.age, 
+          // Use AI targets from backend
+          calorieTarget: data.nutrition?.daily_calories || 2000,
+          proteinTarget: data.nutrition?.daily_protein_g,
+          carbsTarget: data.nutrition?.daily_carbs_g,
+          fatTarget: data.nutrition?.daily_fats_g,
+        });
+      } catch (err) {
+        console.error('Error fetching user data', err);
       }
-      setLoading(false);
-    };
+    } else {
+      setUserData(null);
+    }
+    setLoading(false);
+  };
 
+  useEffect(() => {
     fetchUserData();
   }, [user]);
 
@@ -86,18 +85,24 @@ export const UserProvider = ({ children }) => {
             });
             console.log("Goals updated successfully (and triggered AI calculation)");
         }
+        return true;
 
     } catch (err) {
         console.error('Error updating profile/goals:', err);
         console.error('Response data:', err.response?.data);
         alert("Failed to save profile: " + (err.response?.data?.message || err.message));
+        return false;
     }
   };
 
 
 
   const completeOnboarding = async (data) => {
-      await updateUser(data);
+      const success = await updateUser(data);
+      if (success) {
+          await fetchUserData(); // Refresh data to get AI targets
+      }
+      return success;
   };
 
   return (

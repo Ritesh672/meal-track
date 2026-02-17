@@ -5,6 +5,7 @@ dotenv.config();
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+console.log("Gemini Model Initialized: gemini-2.5-flash");
 
 export const calculateNutritionTargets = async (profile, goal) => {
     try {
@@ -44,8 +45,11 @@ export const calculateNutritionTargets = async (profile, goal) => {
         }
         `;
 
+        console.log("Sending prompt to Gemini...");
         const result = await model.generateContent(prompt);
+        console.log("Gemini response received");
         const text = result.response.text();
+        console.log("Gemini Raw Text:", text);
         
         // Clean markdown if present
         let jsonStr = text;

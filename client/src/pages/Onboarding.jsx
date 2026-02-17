@@ -15,7 +15,7 @@ const Onboarding = () => {
     height: '',
     weight: '',
     bodyType: 'average',
-    activityLevel: 'moderate',
+    activityLevel: 'moderately_active',
     goal: 'maintain',
     dietPreference: 'non-veg',
     allergies: '',
@@ -29,9 +29,11 @@ const Onboarding = () => {
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
 
-  const handleFinish = () => {
-    completeOnboarding(formData);
-    navigate('/');
+  const handleFinish = async () => {
+    const success = await completeOnboarding(formData);
+    if (success) {
+      navigate('/');
+    }
   };
 
   return (
@@ -114,11 +116,10 @@ const Onboarding = () => {
                                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-gray-900"
                             >
                                 <option value="sedentary">Sedentary (Little/no exercise)</option>
-                                <option value="lightly_active">Lightly Active </option>
-                                <option value="moderate">Moderate </option>
-                                <option value="active">Active </option>
-                                <option value="very_active">Very Active </option>
-                                <option value="extremely_active">Extremely Active </option>
+                                <option value="lightly_active">Lightly Active (Light exercise 1-3 days/week)</option>
+                                <option value="moderately_active">Moderately Active (Moderate exercise 3-5 days/week)</option>
+                                <option value="very_active">Very Active (Hard exercise 6-7 days/week)</option>
+                                <option value="extremely_active">Extremely Active (Very hard exercise & physical job)</option>
                             </select>
                         </div>
                     </div>
