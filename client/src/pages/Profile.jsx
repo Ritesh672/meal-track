@@ -9,13 +9,14 @@ const Profile = () => {
     const { userData, updateUser } = useUser();
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     
     // Local state for editing to avoid constant context updates
     const [editData, setEditData] = useState({
         weight: userData?.weight || '',
         height: userData?.height || '',
         goal: userData?.goal || 'maintain',
-        activityLevel: userData?.activityLevel || 'moderate',
+        activityLevel: userData?.activityLevel || 'moderately_active',
     });
 
     const handleLogout = () => {
@@ -23,13 +24,15 @@ const Profile = () => {
         navigate('/login');
     };
 
-    const handleSave = () => {
-        updateUser({
+    const handleSave = async () => {
+        setIsSaving(true);
+        await updateUser({
             weight: Number(editData.weight),
             height: Number(editData.height),
             goal: editData.goal,
             activityLevel: editData.activityLevel
         });
+        setIsSaving(false);
         setIsEditing(false);
     };
 
@@ -65,13 +68,16 @@ const Profile = () => {
                         <h3 className="text-lg font-bold text-gray-900">Body Metrics & Goals</h3>
                         <button 
                             onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                            disabled={isSaving}
                             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
                                 isEditing 
                                 ? 'bg-green-600 hover:bg-green-700 text-white' 
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                            }`}
+                            } ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {isEditing ? <><Save className="w-4 h-4" /> Save Changes</> : 'Edit Details'}
+                            {isEditing ? (
+                                isSaving ? 'Calculating...' : <><Save className="w-4 h-4" /> Save Changes</>
+                            ) : 'Edit Details'}
                         </button>
                     </div>
 

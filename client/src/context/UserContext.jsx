@@ -54,22 +54,36 @@ export const UserProvider = ({ children }) => {
         name: data.fullName || data.name || prev?.name 
     }));
 
+    const retryRequest = async (fn, retries = 3, delay = 1000) => {
+        try {
+            return await fn();
+        } catch (err) {
+            if (retries === 0) throw err;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return retryRequest(fn, retries - 1, delay * 2);
+        }
+    };
+
     try {
         console.log("Updating user data:", data); // Debug log
 
         // Update Profile
-        if (data.fullName || data.age || data.gender || data.weight || data.height) {
+        // We must merge with existing userData to avoid sending nulls for required fields (like name/age)
+        if (data.fullName || data.age || data.gender || data.weight || data.height || userData) {
             console.log("Sending profile update...");
-            await axiosInstance.post('/user/profile', { 
-                full_name: data.fullName || data.name, 
-                age: data.age,
-                gender: data.gender,
-                current_weight_kg: data.weight,
-                height_cm: data.height,
+            
+            const payload = {
+                full_name: data.fullName || data.name || userData?.name, 
+                age: data.age || userData?.age,
+                gender: data.gender || userData?.gender,
+                current_weight_kg: data.weight || userData?.weight,
+                height_cm: data.height || userData?.height,
                 // Map activity level to fitness level (approximate) or default to intermediate
-                fitness_level: ['sedentary', 'lightly_active'].includes(data.activityLevel) ? 'beginner' : 
-                               ['very_active', 'extremely_active'].includes(data.activityLevel) ? 'advanced' : 'intermediate'
-            });
+                fitness_level: ['sedentary', 'lightly_active'].includes(data.activityLevel || userData?.activityLevel) ? 'beginner' : 
+                               ['very_active', 'extremely_active'].includes(data.activityLevel || userData?.activityLevel) ? 'advanced' : 'intermediate'
+            };
+
+            await retryRequest(() => axiosInstance.post('/user/profile', payload));
             console.log("Profile updated successfully");
         }
 
@@ -77,12 +91,12 @@ export const UserProvider = ({ children }) => {
         // Note: The backend expects 'goal_type', 'target_weight_kg', 'activity_level', 'target_physique'
         if (data.goal || data.activityLevel) {
              console.log("Sending goals update...");
-             await axiosInstance.post('/user/goals', { 
+             await retryRequest(() => axiosInstance.post('/user/goals', { 
                 goal_type: data.goal === 'lose' ? 'weight_loss' : data.goal === 'gain' ? 'muscle_gain' : 'maintenance', // Map frontend values to backend ENUM
                 target_physique: 'athletic', // Default or add to frontend
-                target_weight_kg: data.weight, // Default to current weight if not specified
-                activity_level: data.activityLevel
-            });
+                target_weight_kg: data.weight || userData?.weight, // Default to current weight if not specified
+                activity_level: data.activityLevel || userData?.activityLevel
+            }));
             console.log("Goals updated successfully (and triggered AI calculation)");
         }
         return true;

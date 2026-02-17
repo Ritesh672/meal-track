@@ -63,6 +63,55 @@ export const calculateNutritionTargets = async (profile, goal) => {
 
     } catch (error) {
         console.error("Gemini Nutrition Calculation Error:", error);
-        throw new Error("Failed to calculate nutrition targets with AI");
+        console.log("Falling back to standard BMR calculation...");
+
+        // --- Fallback Calculation (Mifflin-St Jeor Equation) ---
+        let bmr;
+        if (profile.gender === 'male') {
+            bmr = (10 * profile.current_weight_kg) + (6.25 * profile.height_cm) - (5 * profile.age) + 5;
+        } else {
+            bmr = (10 * profile.current_weight_kg) + (6.25 * profile.height_cm) - (5 * profile.age) - 161;
+        }
+
+        // Activity Multipliers
+        const activityMultipliers = {
+            'sedentary': 1.2,
+            'lightly_active': 1.375,
+            'moderately_active': 1.55,
+            'very_active': 1.725,
+            'extremely_active': 1.9
+        };
+        
+        // Default to 'moderately_active' if valid activity level is missing or invalid
+        const activityLevel = goal.activity_level && activityMultipliers[goal.activity_level] 
+            ? goal.activity_level 
+            : 'moderately_active';
+            
+        const tdee = bmr * activityMultipliers[activityLevel];
+
+        // Goal Adjustment
+        let dailyCalories = tdee;
+        if (goal.goal_type === 'weight_loss') {
+            dailyCalories -= 500;
+        } else if (goal.goal_type === 'muscle_gain') {
+            dailyCalories += 500;
+        }
+
+        dailyCalories = Math.round(dailyCalories);
+
+        // Let's use a balanced split: Protein 30%, Fat 25%, Carbs 45%
+        const proteinCals = dailyCalories * 0.30;
+        const fatCals = dailyCalories * 0.25;
+        const carbCals = dailyCalories * 0.45;
+
+        return {
+            daily_calories: dailyCalories,
+            daily_protein_g: Math.round(proteinCals / 4),
+            daily_carbs_g: Math.round(carbCals / 4),
+            daily_fats_g: Math.round(fatCals / 9),
+            daily_fiber_g: 30, // Standard recommendation
+            daily_water_ml: 35 * profile.current_weight_kg, // ~35ml per kg
+            notes: "Calculated using standard metabolic formulas (AI unavailable)."
+        };
     }
 };

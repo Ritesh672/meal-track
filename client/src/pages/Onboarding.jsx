@@ -5,6 +5,7 @@ import { Check, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { completeOnboarding } = useUser();
   const navigate = useNavigate();
 
@@ -30,9 +31,12 @@ const Onboarding = () => {
   const handleBack = () => setStep(prev => prev - 1);
 
   const handleFinish = async () => {
+    setIsGenerating(true);
     const success = await completeOnboarding(formData);
     if (success) {
       navigate('/');
+    } else {
+        setIsGenerating(false);
     }
   };
 
@@ -210,9 +214,14 @@ const Onboarding = () => {
                 ) : (
                     <button 
                         onClick={handleFinish}
-                        className="px-8 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-green-500/20"
+                        disabled={isGenerating}
+                        className={`px-8 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg ${
+                            isGenerating 
+                            ? 'bg-gray-400 cursor-not-allowed text-white' 
+                            : 'bg-green-600 hover:bg-green-700 text-white shadow-green-500/20'
+                        }`}
                     >
-                        Finish Setup <Check className="w-4 h-4" />
+                        {isGenerating ? 'Generating Plan...' : 'Finish Setup'} <Check className={`w-4 h-4 ${isGenerating ? 'hidden' : ''}`} />
                     </button>
                 )}
             </div>
